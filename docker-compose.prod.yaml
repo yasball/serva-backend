@@ -1,0 +1,43 @@
+networks:
+  serva_backend:
+    driver: bridge
+
+volumes:
+  database_data:
+    name: serva_database_local
+  minio_data:
+    name: serva_minio_local
+
+x-base-environment: &base-environment
+  NODE_ENV: development
+
+x-base-image: &base-image
+  restart: unless-stopped
+  environment:
+    <<: *base-environment
+
+services:
+  app:
+    <<: *base-image
+    container_name: serva_app_local
+    image: serva_app_local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8008:8008
+
+  database:
+    <<: *base-image
+    container_name: serva_database_local
+    image: postgres:17
+
+  minio:
+    <<: *base-image
+    container_name: serva_minio_local
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+
+  gotenberg:
+    <<: *base-image
+    container_name: serva_gotenberg_local
+    image: gotenberg/gotenberg:8.27
