@@ -1,0 +1,58 @@
+networks:
+  serva_backend_local:
+    driver: bridge
+
+volumes:
+  database_data:
+    name: serva_database_local
+  minio_data:
+    name: serva_minio_local
+
+x-base-environment: &base-environment
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: password
+  POSTGRES_DB: serva_db
+  MINIO_ROOT_USER: minioadmin
+  MINIO_ROOT_PASSWORD: minioadmin
+
+x-base-image: &base-image
+  restart: unless-stopped
+  environment:
+    <<: *base-environment
+  networks:
+    - serva_backend_local
+
+services:
+  database:
+    <<: *base-image
+    container_name: serva_database_local
+    image: postgres:17
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    ports:
+      - 5332:5432
+
+  minio:
+    <<: *base-image
+    container_name: serva_minio_local
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data
+    ports:
+      - 9900:9000
+      - 9901:9001
+    volumes:
+      - minio_data:/data
+
+  minio_mc:
+    <<: *base-image
+    restart: no
+    container_name: serva_minio_mc_local
+    image: minio/mc:latest
+    entrypoint: >
+      sh -c "
+        sleep 10 &&
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        mc mb local/serva-bucket --ignore-existing
+      "
+    depends_on:
+      - minio   
