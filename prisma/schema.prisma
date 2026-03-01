@@ -1,27 +1,291 @@
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/__generated__/prisma"
+  provider     = "prisma-client"
+  output       = "../src/__generated__/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+
+  schemas = ["auth", "core"]
 }
+
+//////////////////////////////
+// ENUMS
+//////////////////////////////
 
 enum UserRole {
   admin
   employee
+
+  @@schema("auth")
 }
 
-model User {
-  id    Int                 @default(autoincrement()) @id
+enum QRType {
+  self_service
+  public_appeal
+  priority_service
 
-  username String           @unique
+  @@schema("core")
+}
+
+enum RequestStatus {
+  new
+  assigned
+  completed
+  cancelled
+
+  @@schema("core")
+}
+
+enum RequestSource {
+  telegram
+  web
+  employee
+
+  @@schema("core")
+}
+
+//////////////////////////////
+// AUTH
+//////////////////////////////
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
   password String
 
-  role UserRole             @default(employee)
+  firstname  String
+  lastname   String
+  middlename String?
 
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  role      UserRole
+  is_active Boolean  @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_users", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_users", fields: [updated_by_id], references: [id])
+
+  assigned_requests  Request[] @relation("assigned_requests")
+  completed_requests Request[] @relation("completed_requests")
+
+  created_users User[] @relation("created_users")
+  updated_users User[] @relation("updated_users")
+
+  created_cities City[] @relation("created_cities")
+  updated_cities City[] @relation("updated_cities")
+
+  created_organizations Organization[] @relation("created_organizations")
+  updated_organizations Organization[] @relation("updated_organizations")
+
+  created_namespaces Namespace[] @relation("created_namespaces")
+  updated_namespaces Namespace[] @relation("updated_namespaces")
+
+  created_qr_codes QRCode[] @relation("created_qr_codes")
+  updated_qr_codes QRCode[] @relation("updated_qr_codes")
+
+  created_requests Request[] @relation("created_requests")
+  updated_requests Request[] @relation("updated_requests")
+
+  @@map("users")
+  @@schema("auth")
+}
+
+//////////////////////////////
+// CORE
+//////////////////////////////
+
+model City {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_cities", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_cities", fields: [updated_by_id], references: [id])
+
+  organizations Organization[]
+
+  @@map("cities")
+  @@schema("core")
+}
+
+model Organization {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  bin           String?
+  legal_address String?
+
+  city_id Int?
+  city    City? @relation(fields: [city_id], references: [id])
+
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_organizations", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_organizations", fields: [updated_by_id], references: [id])
+
+  namespaces Namespace[]
+  qr_codes   QRCode[]
+  requests   Request[]
+
+  @@index([city_id])
+  @@index([name])
+  @@map("organizations")
+  @@schema("core")
+}
+
+model Namespace {
+  id Int @id @default(autoincrement())
+
+  name        String
+  description String?
+
+  organization_id Int
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  parent_id Int?
+  parent    Namespace?  @relation("NamespaceTree", fields: [parent_id], references: [id])
+  children  Namespace[] @relation("NamespaceTree")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_namespaces", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_namespaces", fields: [updated_by_id], references: [id])
+
+  qr_codes QRCode[]
+  requests Request[]
+
+  @@unique([organization_id, parent_id, name])
+  @@index([organization_id, parent_id])
+  @@index([name])
+  @@map("namespaces")
+  @@schema("core")
+}
+
+model QRCode {
+  id Int @id @default(autoincrement())
+
+  code        String  @unique @default(uuid()) @db.Uuid
+  name        String
+  description String?
+
+  type QRType
+
+  organization_id Int
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  namespace_id Int?
+  namespace    Namespace? @relation(fields: [namespace_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_qr_codes", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_qr_codes", fields: [updated_by_id], references: [id])
+
+  requests Request[]
+
+  @@unique([namespace_id, name])
+  @@index([code])
+  @@index([name])
+  @@index([organization_id])
+  @@index([namespace_id])
+  @@index([type])
+  @@index([created_at])
+  @@index([created_by_id])
+  @@index([updated_at])
+  @@index([updated_by_id])
+  @@map("qr_codes")
+  @@schema("core")
+}
+
+model Request {
+  id Int @id @default(autoincrement())
+
+  organization_id Int
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  namespace_id Int?
+  namespace    Namespace? @relation(fields: [namespace_id], references: [id])
+
+  qrcode_id Int
+  qr_code   QRCode @relation(fields: [qrcode_id], references: [id])
+
+  description String?
+
+  status RequestStatus @default(new)
+  source RequestSource
+
+  assigned_to   Int?
+  assigned_user User? @relation("assigned_requests", fields: [assigned_to], references: [id])
+
+  assigned_at DateTime?
+
+  completed_note        String?
+  complete_service_note String?
+
+  completed_at   DateTime?
+  completed_by   Int?
+  completed_user User?     @relation("completed_requests", fields: [completed_by], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  created_by_id Int?
+  created_by    User? @relation("created_requests", fields: [created_by_id], references: [id])
+  updated_by_id Int?
+  updated_by    User? @relation("updated_requests", fields: [updated_by_id], references: [id])
+
+  feedback Feedback?
+
+  @@index([qrcode_id, namespace_id, status, created_at])
+  @@index([organization_id])
+  @@index([namespace_id])
+  @@index([qrcode_id])
+  @@index([status])
+  @@index([source])
+  @@index([assigned_to])
+  @@index([assigned_at])
+  @@index([completed_by])
+  @@index([completed_at])
+  @@index([created_at])
+  @@index([created_by_id])
+  @@map("requests")
+  @@schema("core")
+}
+
+model Feedback {
+  id Int @id @default(autoincrement())
+
+  request_id Int     @unique
+  request    Request @relation(fields: [request_id], references: [id])
+
+  rating      Int     @db.SmallInt
+  description String?
+
+  created_at DateTime @default(now())
+
+  @@index([request_id])
+  @@map("feedback")
+  @@schema("core")
 }
