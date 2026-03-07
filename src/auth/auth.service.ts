@@ -3,12 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
 import { JwtPayloadDto } from './dto/jwt.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
-  private readonly saltRounds = 10;
-
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
@@ -19,7 +18,7 @@ export class AuthService {
 
   private session_max_age = '30d' as const;
 
-  async createSession(user_id: number, ip = '', user_agent = '') {
+  public async createSession(user_id: number, ip = '', user_agent = '') {
     const session = await this.prisma.session.create({
       data: {
         user_id,
@@ -33,7 +32,7 @@ export class AuthService {
     return session;
   }
 
-  async generateTokens(session_id: number, user_id: number) {
+  public async generateTokens(session_id: number, user_id: number) {
     const accessToken = this.jwtService.sign<JwtPayloadDto>(
       { session_id, user_id, type: 'access' },
       { expiresIn: ms(this.accessExpires) },
@@ -44,12 +43,12 @@ export class AuthService {
       { expiresIn: ms(this.refreshExpires) },
     );
 
-    const hashed = await bcrypt.hash(refreshToken, 10);
+    const hash = createHash('sha256').update(refreshToken).digest('hex');
 
     await this.prisma.session.update({
       where: { id: session_id },
       data: {
-        refreshToken: hashed,
+        refreshToken: hash,
       },
     });
 
@@ -59,7 +58,7 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string) {
+  public async refreshTokens(refreshToken: string) {
     let payload: JwtPayloadDto;
 
     try {
@@ -74,23 +73,33 @@ export class AuthService {
 
     const session = await this.prisma.session.findUnique({
       where: { id: payload.session_id },
+      select: {
+        id: true,
+        expiresAt: true,
+        refreshToken: true,
+        user: {
+          select: {
+            id: true,
+            is_active: true,
+          },
+        },
+      },
     });
 
-    if (
-      !session ||
-      /* prettier-ignore */
-      !(
-        await bcrypt.compare(
-          refreshToken,
-          session.refreshToken
-        )
-      ) ||
-      /* */
-      session.expiresAt < new Date()
-    ) {
-      throw new UnauthorizedException('Session expired');
-    }
+    return this.prisma.$transaction(async (tx) => {
+      const hash = createHash('sha256').update(refreshToken).digest('hex');
 
-    return this.generateTokens(session.id, payload.user_id);
+      if (
+        !session ||
+        /*  */
+        session.refreshToken != hash ||
+        /* */
+        session.expiresAt < new Date()
+      ) {
+        throw new UnauthorizedException('Session expired');
+      }
+
+      return this.generateTokens(session.id, payload.user_id);
+    });
   }
 }
