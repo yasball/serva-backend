@@ -11,4 +11,6 @@ export default () => ({
     SECRET_KEY: process.env.MINIO_SECRET_KEY || 'minioadmin',
     BUCKET_NAME: process.env.MINIO_BUCKET_NAME || 'serva-bucket',
   },
+
+  JWT_SECRET: process.env.JWT_SECRET || 'local-secret',
 });

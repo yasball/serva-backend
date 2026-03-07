@@ -8,12 +8,22 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 
 import { CommandRunnerModule } from 'nest-commander';
+import { JwtModule } from '@nestjs/jwt';
+import configuration from './config/configuration';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: join(process.cwd(), '.env'),
       isGlobal: true,
+      envFilePath: join(process.cwd(), '.env'),
+    }),
+    JwtModule.registerAsync({
+      global: true,
+      useFactory() {
+        return {
+          secret: configuration().JWT_SECRET,
+        };
+      },
     }),
     PrismaModule,
     UsersModule,
