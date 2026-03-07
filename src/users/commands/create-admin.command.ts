@@ -31,7 +31,7 @@ export class CreateAdminCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-e, --username <username>',
+    flags: '-u, --username <username>',
     description: 'Admin username, min: 4',
   })
   parseUsername(val: string): string {
