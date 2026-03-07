@@ -104,10 +104,10 @@ model Session {
   ip           String
   user_agent   String
   // 
-  refreshToken String
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  refresh_hash String
+  expires_at    DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   @@map("sessions")
   @@schema("auth")

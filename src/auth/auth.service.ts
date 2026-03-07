@@ -24,8 +24,8 @@ export class AuthService {
         user_id,
         ip,
         user_agent,
-        expiresAt: new Date(Date.now() + ms(this.session_max_age)),
-        refreshToken: '' /* Записывается после создания сессии */,
+        expires_at: new Date(Date.now() + ms(this.session_max_age)),
+        refresh_hash: '' /* Записывается после создания сессии */,
       },
     });
 
@@ -48,7 +48,7 @@ export class AuthService {
     await this.prisma.session.update({
       where: { id: session_id },
       data: {
-        refreshToken: hash,
+        refresh_hash: hash,
       },
     });
 
@@ -75,8 +75,8 @@ export class AuthService {
       where: { id: payload.session_id },
       select: {
         id: true,
-        expiresAt: true,
-        refreshToken: true,
+        expires_at: true,
+        refresh_hash: true,
         user: {
           select: {
             id: true,
@@ -92,9 +92,9 @@ export class AuthService {
       if (
         !session ||
         /*  */
-        session.refreshToken != hash ||
+        session.refresh_hash != hash ||
         /* */
-        session.expiresAt < new Date()
+        session.expires_at < new Date()
       ) {
         throw new UnauthorizedException('Session expired');
       }

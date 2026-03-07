@@ -50,7 +50,7 @@ export class AuthGuard implements CanActivate {
       where: { id: payload.session_id },
       select: {
         id: true,
-        expiresAt: true,
+        expires_at: true,
         user: {
           select: {
             id: true,
@@ -69,7 +69,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Session not found');
     }
 
-    if (session.expiresAt < new Date()) {
+    if (session.expires_at < new Date()) {
       throw new UnauthorizedException('Session expired');
     }
 
