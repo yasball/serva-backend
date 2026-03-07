@@ -11,13 +11,14 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main",
+    "start:prod": "node dist/main",
     "cli:dev": "pnpm build && pnpm cli:prod",
-    "cli:prod": "node dist/src/cli.js",
+    "cli:prod": "node dist/cli.js",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "prisma:generate": "pnpm prisma generate",
     "prisma:migrate:dev": "pnpm prisma migrate dev",
-    "prisma:migrate:prod": "pnpm prisma migrate deploy"
+    "prisma:migrate:prod": "pnpm prisma migrate deploy",
+    "prisma:migrate-reset": "pnpm prisma migrate reset"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
