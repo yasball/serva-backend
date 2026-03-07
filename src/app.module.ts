@@ -4,6 +4,10 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { join } from 'path';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+
+import { CommandRunnerModule } from 'nest-commander';
 
 @Module({
   imports: [
@@ -12,6 +16,9 @@ import { join } from 'path';
       isGlobal: true,
     }),
     PrismaModule,
+    UsersModule,
+    AuthModule,
+    CommandRunnerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
