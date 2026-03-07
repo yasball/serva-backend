@@ -3,9 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
 import { JwtPayloadDto } from './dto/jwt.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  private readonly saltRounds = 10;
+
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
@@ -41,10 +44,12 @@ export class AuthService {
       { expiresIn: ms(this.refreshExpires) },
     );
 
+    const hashed = await bcrypt.hash(refreshToken, 10);
+
     await this.prisma.session.update({
       where: { id: session_id },
       data: {
-        refreshToken,
+        refreshToken: hashed,
       },
     });
 
@@ -73,7 +78,14 @@ export class AuthService {
 
     if (
       !session ||
-      session.refreshToken !== refreshToken ||
+      /* prettier-ignore */
+      !(
+        await bcrypt.compare(
+          refreshToken,
+          session.refreshToken
+        )
+      ) ||
+      /* */
       session.expiresAt < new Date()
     ) {
       throw new UnauthorizedException('Session expired');
