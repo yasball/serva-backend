@@ -6,7 +6,7 @@ export default () => ({
     'postgresql://postgres:password@localhost:5432/serva_db',
 
   MINIO: {
-    ENDPOINT: process.env.MINIO_ENDPOINT || 'localhost:9000',
+    ENDPOINT: process.env.MINIO_ENDPOINT || 'localhost:9900',
     ACCESS_KEY: process.env.MINIO_ACCESS_KEY || 'minioadmin',
     SECRET_KEY: process.env.MINIO_SECRET_KEY || 'minioadmin',
     BUCKET_NAME: process.env.MINIO_BUCKET_NAME || 'serva-bucket',

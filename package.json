@@ -14,7 +14,8 @@
     "start:prod": "node dist/src/main",
     "cli:dev": "pnpm build && pnpm cli:prod",
     "cli:prod": "node dist/src/cli.js",
-    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
+    "db:generate": "pnpm prisma generate"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
