@@ -99,6 +99,10 @@ export class AuthService {
         throw new UnauthorizedException('Session expired');
       }
 
+      if (!session.user.is_active) {
+        throw new UnauthorizedException('User is not active');
+      }
+
       return this.generateTokens(session.id, payload.user_id);
     });
   }
