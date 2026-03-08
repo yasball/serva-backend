@@ -11,8 +11,10 @@ import { AuthService } from './auth.service';
 import type { LoginDto } from './dto/auth.dto';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthGuard } from './guards/auth.guard';
 import type { Request } from 'express';
+import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
+import type { User } from '../__generated__/prisma/browser';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +24,7 @@ export class AuthController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Public()
   @Post('/tokens/')
   async tokens(@Req() req: Request, @Body() dto: LoginDto) {
     if (!dto || !dto.username || !dto.password) {
@@ -59,14 +62,14 @@ export class AuthController {
     return this.authService.generateTokens(session.id, user.id);
   }
 
+  @Public()
   @Post('/refresh/')
   async refresh(@Body('refresh') refreshToken: string) {
     return this.authService.refreshTokens(refreshToken);
   }
 
-  @UseGuards(AuthGuard)
   @Get('/me/')
-  async me(@Req() req: Request) {
-    return req.user;
+  async me(@CurrentUser() user: User) {
+    return user;
   }
 }
