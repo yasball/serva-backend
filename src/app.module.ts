@@ -10,6 +10,9 @@ import { AuthModule } from './auth/auth.module';
 import { CommandRunnerModule } from 'nest-commander';
 import { JwtModule } from '@nestjs/jwt';
 import configuration from './config/configuration';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { AuthGuard } from './auth/guards/auth.guard';
 
 @Module({
   imports: [
@@ -31,6 +34,16 @@ import configuration from './config/configuration';
     CommandRunnerModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
