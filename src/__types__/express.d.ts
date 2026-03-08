@@ -1,4 +1,4 @@
-import type { User, Session } from 'src/__generated__/prisma';
+import type { User, Session } from '../__generated__/prisma/browser';
 
 declare global {
   declare namespace Express {
