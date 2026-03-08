@@ -9,8 +9,4 @@ export class AppController {
   getPong() {
     return this.appService.getPong();
   }
-  @Get('/users/')
-  getUsers() {
-    return this.appService.getUsers();
-  }
 }
